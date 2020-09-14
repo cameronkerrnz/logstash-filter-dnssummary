@@ -62,6 +62,25 @@ describe LogStash::Filters::Dnssummary do
       end
     end
 
+    context "data cleanup" do
+      sample("in_field" => " space.example.ac.nz ") do
+        expect(subject.get('[out_field][unicode]')).to eq("example.ac.nz")
+      end
+      sample("in_field" => "\ttab.example.ac.nz\t") do
+        expect(subject.get('[out_field][unicode]')).to eq("example.ac.nz")
+      end
+      sample("in_field" => "\rcr.example.ac.nz\r") do
+        expect(subject.get('[out_field][unicode]')).to eq("example.ac.nz")
+      end
+      sample("in_field" => "\nlf.example.ac.nz\n") do
+        expect(subject.get('[out_field][unicode]')).to eq("example.ac.nz")
+      end
+      sample("in_field" => "something.example.ac.nz") do
+        expect(subject.get('[out_field][unicode]')).to eq('example.ac.nz')
+      end
+    end
+
+
     # Things that could be better
     # 1.1.168.192.in-addr.arpa.   currently return 192.in-addr.arpa
 

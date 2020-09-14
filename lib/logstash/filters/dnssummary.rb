@@ -49,12 +49,12 @@ class LogStash::Filters::Dnssummary < LogStash::Filters::Base
   public
   def filter(event)
 
-    input = event.get(@source)
+    input = event.get(@source).strip
     domain = nil
 
     if PublicSuffix.valid?(input)
       begin
-        domain = PublicSuffix.parse(event.get(@source)).domain
+        domain = PublicSuffix.parse(input).domain
 
         if domain.nil?
           logger.warn("Parsed domain for #{input} returned a nil domain")
@@ -95,7 +95,7 @@ class LogStash::Filters::Dnssummary < LogStash::Filters::Base
     domain_ascii = Idna.to_ascii(domain).downcase
     domain_unicode = Idna.to_unicode(domain_ascii)
 
-    logger.warn("input is #{input}, domain is #{domain}, domain_ascii is #{domain_ascii}, domain_unicode is #{domain_unicode}")
+    # logger.warn("input is #{input.inspect}, domain is #{domain.inspect}, domain_ascii is #{domain_ascii.inspect}, domain_unicode is #{domain_unicode.inspect}")
 
     if @include_unicode
       # Replace the event message with our message as configured in the
