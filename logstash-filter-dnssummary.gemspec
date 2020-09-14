@@ -19,5 +19,7 @@ Gem::Specification.new do |s|
 
   # Gem dependencies
   s.add_runtime_dependency "logstash-core-plugin-api", "~> 2.0"
+  s.add_runtime_dependency 'public_suffix', '~> 1.5', '>= 1.5.3'
+  s.add_runtime_dependency 'idna', '~> 0.1.0'   # requires libidn, but you need to specify the version (eg. 'libidn.so.11' in dnssummary.rb)
   s.add_development_dependency 'logstash-devutils'
 end
