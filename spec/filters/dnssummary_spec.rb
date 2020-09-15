@@ -82,15 +82,6 @@ describe LogStash::Filters::Dnssummary do
         expect(subject).to include("out_field")
         expect(subject.get('[out_field][unicode]')).to eq("foo")  #relative to user's search path
       end
-      sample("in_field" => "192.168.0.1") do
-        expect(subject.get('[out_field][unicode]')).to eq("192.168.0.1")
-      end
-      sample("in_field" => "::1") do
-        expect(subject.get('[out_field][unicode]')).to eq("::1")
-      end
-      sample("in_field" => "fe80::109a:804f:2d0f:5a24%56") do
-        expect(subject.get('[out_field][unicode]')).to eq("fe80::109a:804f:2d0f:5a24%56")
-      end
       sample("in_field" => "https://www.google.com/") do
         expect(subject.get('[out_field][unicode]')).to eq("https://www.google.com/")
       end
@@ -124,14 +115,9 @@ describe LogStash::Filters::Dnssummary do
         expect(subject.get('tags')).to include('_dnssummary_filter_error')
       end
     end
-
-
-    # Things that could be better
-    # 1.1.168.192.in-addr.arpa.   currently return 192.in-addr.arpa
-
   end
 
-  describe "Looking more at IDNA" do
+  describe "Both Unicode and ASCII" do
     let(:config) do <<-CONFIG
       filter {
         dnssummary {
@@ -186,6 +172,53 @@ describe LogStash::Filters::Dnssummary do
         # See https://en.wikipedia.org/wiki/Emoji_domain
         expect(subject.get('[out_field][unicode]')).to eq("👁👄👁.fm")
         expect(subject.get('[out_field][ascii]')).to eq("xn--mp8hai.fm")
+      end
+    end
+
+    context "IP addresses" do
+      sample("in_field" => "172.16.30.40") do
+        expect(subject.get('[out_field][unicode]')).to eq("172.16.0.0/12")
+      end
+      sample("in_field" => "127.0.0.1") do
+        expect(subject.get('[out_field][unicode]')).to eq("127.0.0.1")
+      end
+      sample("in_field" => "192.168.0.1.") do
+        # Ideally would fall out as an identity transformation, but it doesn't
+        # parse as an IP address and so public_suffix gets its hands on it.
+        # Happy to treat this an undefined behaviour for now.
+        # This unit-test is just to alert for changing behaviour.
+        expect(subject.get('[out_field][unicode]')).to eq("0.1")
+      end
+      sample("in_field" => "1.1.168.192.in-addr.arpa") do
+        # When might we see this, I can't think of a single time I've seen this
+        # in something not a debug log.
+        # Considered as undefined behaviour; this unit test is just
+        # to alert for changing behaviour
+        expect(subject.get('[out_field][unicode]')).to eq("192.in-addr.arpa")
+      end
+      sample("in_field" => "0000:0000:0000:0000:0000:0000:0000:0001") do
+        expect(subject.get('[out_field][unicode]')).to eq("::1")
+      end
+      sample("in_field" => "::1") do
+        expect(subject.get('[out_field][unicode]')).to eq("::1")
+      end
+      sample("in_field" => "fe80::109a:804f:2d0f:5a24%56") do
+        # IPAddr doesn't like IPv6 interface identifier, although
+        # you're very unlikely to see an interface identifier in a
+        # context where you'd want to use this module, so in this
+        # case I'd be happy enough with an identity.
+        expect(subject.get('[out_field][unicode]')).to eq("fe80::109a:804f:2d0f:5a24%56")
+      end
+      sample("in_field" => "fe80::109a:804f:2d0f:5a24") do
+        # Could consider using compression (::) as a natural place to break
+        expect(subject.get('[out_field][unicode]')).to eq("fe80::/48")
+      end
+      sample("in_field" => "2407:7000:8246:1800:22b0:1ff:fec4:9ba4") do
+        expect(subject.get('[out_field][unicode]')).to eq("2407:7000:8246::/48")
+      end
+      sample("in_field" => "[2407:7000:8246:1800:22b0:1ff:fec4:9ba4]") do
+        # This is what you might see as the host part of a URI
+        expect(subject.get('[out_field][unicode]')).to eq("2407:7000:8246::/48")
       end
     end
   end
