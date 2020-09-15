@@ -40,6 +40,11 @@ class LogStash::Filters::Dnssummary < LogStash::Filters::Base
   config :target, :validate => :string, :required => true
   config :include_unicode, :validate => :boolean, :default => true
   config :include_ascii, :validate => :boolean, :default => false
+  # Hmmm, what to do with invalid types of input; currently we just copy them through
+  # although potentially you might want something more nuanced.
+  # The only thing we tag a failure for at present is when there is a IDNA security
+  # error such as an embedded NUL byte.
+  config :tag_on_failure, :validate => :string, :default => '_dnssummary_filter_error'
 
   public
   def register
@@ -92,18 +97,25 @@ class LogStash::Filters::Dnssummary < LogStash::Filters::Base
     # proves useful to explicitly downcase the ascii
     # version to cope with the likes of xn--Bcher-kva.example
     #
-    domain_ascii = Idna.to_ascii(domain).downcase
-    domain_unicode = Idna.to_unicode(domain_ascii)
+    domain_ascii = nil
+    domain_unicode = nil
+    begin
+      domain_ascii = Idna.to_ascii(domain).downcase
+      domain_unicode = Idna.to_unicode(domain_ascii)
+    rescue SecurityError
+      logger.warn("Input #{input.inspect} contains security errors and will not be parsed")
+      event.tag(@tag_on_failure)
+    end
 
-    # logger.warn("input is #{input.inspect}, domain is #{domain.inspect}, domain_ascii is #{domain_ascii.inspect}, domain_unicode is #{domain_unicode.inspect}")
+    logger.warn("input is #{input.inspect}, domain is #{domain.inspect}, domain_ascii is #{domain_ascii.inspect}, domain_unicode is #{domain_unicode.inspect}")
 
-    if @include_unicode
+    if @include_unicode and domain_unicode
       # Replace the event message with our message as configured in the
       # config file.
       event.set("[#{@target}][unicode]", domain_unicode)
     end
 
-    if @include_ascii
+    if @include_ascii and domain_ascii
       event.set("[#{@target}][ascii]", domain_ascii)
     end
 
