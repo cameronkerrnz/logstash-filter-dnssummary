@@ -189,4 +189,26 @@ describe LogStash::Filters::Dnssummary do
       end
     end
   end
+
+  describe "With settings for QA" do
+    let(:config) do <<-CONFIG
+      filter {
+        dnssummary {
+          id => "sut"
+          add_field => {
+            "somekey" => "someval"
+          }
+          source => "in_field"
+          target => "out_field"
+          include_unicode => true
+          include_ascii => true
+        }
+      }
+    CONFIG
+    end
+
+    sample("in_field" => "example.com") do
+      expect(subject).to include('somekey')
+    end
+  end
 end
