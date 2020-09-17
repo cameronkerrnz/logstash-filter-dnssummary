@@ -1,0 +1,16 @@
+FROM docker.elastic.co/logstash/logstash-oss:7.9.1
+
+USER root
+RUN yum install -y -q epel-release; \
+    yum install -y -q jq; \
+    rm -rf /var/cache/yum
+# Back to what was used in parent image
+USER 1000
+
+COPY *.gem /qa/gems/
+RUN logstash-plugin install /qa/gems/logstash-filter-dnssummary-0.1.0.gem
+RUN rm -f /usr/share/logstash/pipeline/logstash.conf
+COPY qa/pipeline/ /usr/share/logstash/pipeline/
+COPY qa/inputs/ /qa/inputs/
+COPY qa/scripts/ /qa/scripts/
+ENTRYPOINT /qa/scripts/entrypoint.sh
