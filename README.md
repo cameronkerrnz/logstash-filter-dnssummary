@@ -1,8 +1,10 @@
-# Logstash Plugin
+# DNS Summary ("Public Suffix") Logstash Plugin
 
 This is a plugin for [Logstash](https://github.com/elastic/logstash).
 
-It is fully free and fully open source. The license is Apache 2.0, meaning you are pretty much free to use it however you want in whatever way.
+The intent of this plugin is to take a FQDN, such as might be parsed from a Squid proxy access log, and summarise that to the 'site' domain; eg. anything.example.co.nz should summarise to example.co.nz. This is not a trivial process and for some inputs will require the use of the data from the [Public Suffix List](https://publicsuffix.org/), a snapshot of which is included locally. However, it doesn't stop there, and it will also attempt to provide sane (if inaccurate) summarisations for inputs such as IP addresses, and aims to do the correct thing for internationalised domain names.
+
+This plugin is fully free and fully open source. The license is Apache 2.0, meaning you are pretty much free to use it however you want in whatever way.
 
 ## Documentation
 
@@ -13,23 +15,36 @@ Logstash provides infrastructure to automatically generate documentation for thi
 
 ## Need Help?
 
-Need help? Try #logstash on freenode IRC or the https://discuss.elastic.co/c/logstash discussion forum.
+Please submit any questions, bugs or issues about this plugin to the [issues page](https://github.com/cameronkerrnz/logstash-filter-dnssummary/issues)
+
+For general Logstash questions, try #logstash on freenode IRC or the https://discuss.elastic.co/c/logstash discussion forum.
 
 ## Developing
 
-### 1. Plugin Developement and Testing
+### (Optional, but Highly Recommended) Use Dev Containers
 
-#### Code
-- To get started, you'll need JRuby with the Bundler gem installed.
+If you want to have a repeatable development environment that doesn't pollute the rest of your environment with build dependencies and idiosyncrasies of developing Logstash plugins, then you might like to consider using Dev Containers, which this repository has been set up to use.
 
-- Create a new plugin or clone and existing from the GitHub [logstash-plugins](https://github.com/logstash-plugins) organization. We also provide [example plugins](https://github.com/logstash-plugins?query=example).
+This repository is using the [cameronkerrnz/logstash-plugin-dev](https://code.visualstudio.com/docs/remote/containers) container image, which you can see referenced in .devcontainer/Dockerfile
+
+When you've launched this project inside the dev container, you should just need to:
+
+```sh
+bundle install
+bundle exec rspec
+gem build logstash-filter-dnssummary.gemspec
+```
+
+### Coding
+
+- To get started, you'll need JRuby with the Bundler gem installed. This is already done for you if you are using the dev container.
 
 - Install dependencies
 ```sh
 bundle install
 ```
 
-#### Test
+### Unit Tests
 
 - Update your dependencies
 
@@ -43,37 +58,36 @@ bundle install
 bundle exec rspec
 ```
 
-### 2. Running your unpublished Plugin in Logstash
+### Integration Tests
 
-#### 2.1 Run in a local Logstash clone
+This repository contains a supplementary Docker image specification in the file Dockerfile.qa.
+This image will inherit off the official Logstash OSS Docker image, and install your plugin,
+and a test harness and input data-set.
+The primary purpose of this QA build is to harvest performance timings.
+From outside the dev container (if you are using that), you can run this as follows:
 
-- Edit Logstash `Gemfile` and add the local plugin path, for example:
-```ruby
-gem "logstash-filter-awesome", :path => "/your/local/logstash-filter-awesome"
-```
-- Install plugin
 ```sh
-bin/logstash-plugin install --no-verify
+docker build -t logstash-filter-dnssummary:qa -f Dockerfile.qa .
+docker run --rm -it logstash-filter-dnssummary:qa
 ```
-- Run Logstash with your plugin
+
+If you need further debug logging, you might use instead:
+
 ```sh
-bin/logstash -e 'filter {awesome {}}'
+docker run --rm -it logstash-filter-dnssummary.qa --log.level=debug
 ```
-At this point any modifications to the plugin code will be applied to this local Logstash setup. After modifying the plugin, simply rerun Logstash.
 
-#### 2.2 Run in an installed Logstash
-
-You can use the same **2.1** method to run your plugin in an installed Logstash by editing its `Gemfile` and pointing the `:path` to your local plugin development directory or you can build the gem and install it using:
+### Run in an installed Logstash
 
 - Build your plugin gem
 ```sh
-gem build logstash-filter-awesome.gemspec
+gem build logstash-filter-dnssummary.gemspec
 ```
 - Install the plugin from the Logstash home
 ```sh
-bin/logstash-plugin install /your/local/plugin/logstash-filter-awesome.gem
+bin/logstash-plugin install /your/local/plugin/logstash-filter-dnssummary.gem
 ```
-- Start Logstash and proceed to test the plugin
+- Start Logstash and proceed to test the plugin. An example configuration can be found in [qa/pipeline/logstash.conf](qa/pipeline/logstash.conf)
 
 ## Contributing
 

@@ -1,6 +1,5 @@
-:plugin: example
+:plugin: dnssummary
 :type: filter
-// Update header with plugin name
 
 ///////////////////////////////////////////
 START - GENERATED VARIABLES, DO NOT EDIT!
@@ -15,13 +14,14 @@ END - GENERATED VARIABLES, DO NOT EDIT!
 
 [id="plugins-{type}s-{plugin}"]
 
-=== Example filter plugin
+=== DNS Summary ("Public Suffix") filter plugin
 
 include::{include_path}/plugin_header.asciidoc[]
 
 ==== Description
 
-Add plugin description here
+The intent of this plugin is to take a FQDN, such as might be parsed from a Squid proxy access log, and summarise that to the 'site' domain; eg. anything.example.co.nz should summarise to example.co.nz. This is not a trivial process and for some inputs will require the use of the data from the [Public Suffix List](https://publicsuffix.org/), a snapshot of which is included locally.
+However, it doesn't stop there, and it will also attempt to provide sane (if inaccurate) summarisations for inputs such as IP addresses. In general, when an input cannot be recognised as something we support, then we just copy the input, so as to still hopefully be useful in a top-N type of aggregation.
 
 // Format anchors and links to support generated ids for versioning
 // Sample anchor: [id="plugins-{type}s-{plugin}-setting_name"]
@@ -33,52 +33,56 @@ Add plugin description here
 [cols="<,<,<",options="header",]
 |=======================================================================
 |Setting |Input type|Required
-| <<plugins-{type}s-{plugin}-a_setting_name>> |<<boolean,boolean>>|No
-| <<plugins-{type}s-{plugin}-another_setting_name>> |<<hash,hash>>|No
-| <<plugins-{type}s-{plugin}-setting_name_3>> |<<string,string>>|No
-| <<plugins-{type}s-{plugin}-setting_name_4>> |<<number,number>>|No
-| <<plugins-{type}s-{plugin}-setting_name_5>> |<<array,array>>|No
+| <<plugins-{type}s-{plugin}-source>> |<<string,string>>|Yes
+| <<plugins-{type}s-{plugin}-target>> |<<string,string>>|Yes
+| <<plugins-{type}s-{plugin}-include_ascii>> |<<boolean,boolean>>|No
+| <<plugins-{type}s-{plugin}-include_unicode>> |<<boolean,boolean>>|No
+| <<plugins-{type}s-{plugin}-tag_on_failure>> |<<string,string>>|No
 |=======================================================================
 
-[id="plugins-{type}s-{plugin}-a_setting_name"]
-===== `a_setting_name` 
-
-  * Value type is <<boolean,boolean>>
-  * Default value is `true`
-
-Add description here
-
-[id="plugins-{type}s-{plugin}-another_setting_name"]
-===== `another_setting_name` 
-
-  * Value type is <<hash,hash>>
-  * Default value is `{}`
-
-Add description here
-
-[id="plugins-{type}s-{plugin}-setting_name_3"]
-===== `setting_name_3` 
+[id="plugins-{type}s-{plugin}-source"]
+===== `source` 
 
   * Value type is <<string,string>>
-  * Default value is `{}`
+  * No default; must be specified
 
-Add description here
+A field which should be expected to be a FQDN.
 
-[id="plugins-{type}s-{plugin}-setting_name_4"]
-===== `setting_name_4` 
+[id="plugins-{type}s-{plugin}-target"]
+===== `target` 
 
-  * Value type is <<number,number>>
-  * Default value is `0`
+  * Value type is <<string,string>>
+  * No default; must be specified
 
-Add description here
+Field to output a hash containing the summarised domain name, in its Unicode (display form) and ASCII (punycode form).
 
-[id="plugins-{type}s-{plugin}-setting_name_5"]
-===== `setting_name_5` 
+[id="plugins-{type}s-{plugin}-include_ascii"]
+===== `include_ascii` 
 
-  * Value type is <<array,array>>
-  * Default value is {}
+  * Value type is <<boolean,boolean>>
+  * Default value is `false`; the result will _not_ include its encoded (machine-readable) form.
 
-Add description here
+If you are using this plugin with an eye for security analysis, you may like to include the
+Punycoded (ASCII form) for an Internationalised Domain Name (IDN) if you are worried about
+visual confusables.
+
+[id="plugins-{type}s-{plugin}-include_unicode"]
+===== `include_unicode` 
+
+  * Value type is <<boolean,boolean>>
+  * Default value is `true`; the result will include its display (human-readable) form.
+
+You will almost always want this.
+
+Most uses will want the Unicode (display) form of the name, which is human readable. The input is normalised during the summarisation process, so as to be insensitive to case and Unicode Normal Form (it is translated to NFKC, which is suitable for identifies such as DNS keys).
+
+[id="plugins-{type}s-{plugin}-tag_on_failure"]
+===== `tag_on_failure` 
+
+  * Value type is <<string,string>>
+  * Default value is `_dnssummary_filter_error`
+
+In general, when an input cannot be recognised as something we support, then we just copy the input, so as to still hopefully be useful in a top-N type of aggregation. However, when a value cannot be summarised for a serious reason, such as invalid UTF-8 sequence, then the emitted event will be tagged with the tag provided.
 
 // The full list of Value Types is here: 
 // https://www.elastic.co/guide/en/logstash/current/configuration-file-structure.html
