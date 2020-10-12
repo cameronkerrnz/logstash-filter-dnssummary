@@ -181,7 +181,7 @@ class LogStash::Filters::Dnssummary < LogStash::Filters::Base
       domain_ascii = input
     end
 
-    logger.warn("input is #{input.inspect}, domain is #{domain.inspect}, domain_ascii is #{domain_ascii.inspect}, domain_unicode is #{domain_unicode.inspect}")
+    logger.info("input is #{input.inspect}, domain is #{domain.inspect}, domain_ascii is #{domain_ascii.inspect}, domain_unicode is #{domain_unicode.inspect}")
 
     if @include_unicode and domain_unicode
       # Replace the event message with our message as configured in the
