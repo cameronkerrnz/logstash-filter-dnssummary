@@ -15,6 +15,10 @@ describe LogStash::Filters::Dnssummary do
     end
 
     context "basic expectations" do
+      sample("infield" => "something.com") do
+        expect(subject.get('tags')).to include('_dnssummary_filter_error')
+        expect(subject).not_to include("out_field")
+      end
       sample("in_field" => "something.example.ac.nz") do
         expect(subject).to include("out_field")
         expect(subject.get('out_field')).to include('unicode')

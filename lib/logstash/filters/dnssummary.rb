@@ -107,6 +107,13 @@ class LogStash::Filters::Dnssummary < LogStash::Filters::Base
   public
   def filter(event)
 
+    if event.get(@source).nil?
+      logger.info("Input event does not contain expected source in field #{@source}")
+      event.tag(@tag_on_failure)
+      filter_matched(event)
+      return
+    end
+
     input = event.get(@source).strip
 
     domain = nil
