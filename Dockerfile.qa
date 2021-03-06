@@ -8,7 +8,7 @@ RUN yum install -y -q epel-release; \
 USER 1000
 
 COPY *.gem /qa/gems/
-RUN logstash-plugin install /qa/gems/logstash-filter-dnssummary-0.1.1.gem
+RUN logstash-plugin install /qa/gems/logstash-filter-dnssummary-0.1.2.gem
 RUN rm -f /usr/share/logstash/pipeline/logstash.conf
 COPY qa/pipeline/ /usr/share/logstash/pipeline/
 COPY qa/inputs/ /qa/inputs/
