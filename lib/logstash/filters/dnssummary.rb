@@ -172,8 +172,11 @@ class LogStash::Filters::Dnssummary < LogStash::Filters::Base
       begin
         domain_ascii = Idna.to_ascii(domain).downcase
         domain_unicode = Idna.to_unicode(domain_ascii)
-      rescue SecurityError
-        logger.warn("Input #{input.inspect} contains security errors and will not be parsed")
+      rescue SecurityError => e
+        logger.warn("Input #{input.inspect} contains security errors and will not be parsed. #{e.inspect}")
+        event.tag(@tag_on_failure)
+      rescue StandardError => e
+        logger.warn("Input #{input.inspect} contains errors and will not be parsed. #{e.inspect}")
         event.tag(@tag_on_failure)
       end
 
