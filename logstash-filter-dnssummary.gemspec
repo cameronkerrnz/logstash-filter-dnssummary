@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name          = 'logstash-filter-dnssummary'
-  s.version       = '0.1.2'
+  s.version       = '0.1.3'
   s.licenses      = ['Apache-2.0']
   s.summary       = 'A logstash filter plugin for summarising DNS names'
   s.description   = 'Given a DNS name it can provide most significant useful part for identifying the site and normalising IDNA for presentation and security purposes.'
